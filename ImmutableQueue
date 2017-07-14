@@ -1,0 +1,154 @@
+package ImmutabledataStructures;
+import java.util.NoSuchElementException;
+
+/*
+ * So the idea is to first implement an immutable stack and then use it to implement immutable Queue. 
+ * Basically with Queue we want to be able to use both head and tail. So for enQueue we can assume that we just 
+ * insert to the top of the original stack(Lets Call it "Queue Tail") and for deQeueu we can just reverse 
+ * the first stack(Queue tail) and then pop the first element of this new stack. Let's call this 
+ * new reversed stack "Queue Head".
+ * 
+ *  So I first implement the Immutable Stack and then use it for immutable Queue
+ * 
+ */
+
+public class ImmutableQueue<T> implements Queue<T> {
+
+	// Immutable Stack
+	private static class ImmutableStack<T> {
+		// Stack top element
+		private T stackHead;
+		// stack tail is basically everything in the stack except the tail element(it's a stack itself)
+		private ImmutableStack<T> stackTail;
+		//size of the stack
+		private int stackSize;
+	
+		//constructor to create an empty stack
+		private ImmutableStack(){
+			this.stackHead = null;
+			this.stackTail = null;
+			this.stackSize = 0;
+			
+		}
+		
+		//constructor that gets an object and adds it to an existing stack(by creating a new instance of stack)
+		private ImmutableStack(ImmutableStack<T> currentStack, T obj){
+			this.stackHead = obj;
+			this.stackTail = currentStack;
+			this.stackSize = currentStack.stackSize + 1;
+			
+		}
+		
+		// this is to create an empty stack
+		public static ImmutableStack emptyStack(){
+			return new ImmutableStack();
+		}
+		
+		// Check to see if stack is empty or not
+		public boolean isStackEmpty(){
+			
+			if (this.stackSize==0)
+				return true;
+			else
+				return false;
+		}
+		
+		// this is to push to the stack by creating a new instance of stack to keep it immutable
+	    public ImmutableStack<T> push(T t){
+	    	
+	    	return new ImmutableStack(this, t);
+	    }
+	
+	    
+	    // This will be maily used in ImmutableQueue class to reverse the stack for deQueue
+	    public ImmutableStack<T> reverseStack(){
+	    	ImmutableStack<T> reveresedStack = new ImmutableStack<T>();
+	    	ImmutableStack<T> currentTail =  this;
+	    	
+	    	while(!currentTail.isStackEmpty()){
+	    		reveresedStack = reveresedStack.push(currentTail.stackHead);
+	    		currentTail=currentTail.stackTail;
+	    		
+	    	}
+	    	  	
+	    	return reveresedStack;
+	    	
+	    }
+	
+	}
+
+	//so our immutableQueue consists of to immutableStacks which I call QueueHead and QueueHead as explained
+	
+	ImmutableStack<T> QueueHead;
+	ImmutableStack<T> QueueTail;
+	
+	//constructor to create an empty Queue
+	public ImmutableQueue(){
+		 this.QueueHead = ImmutableStack.emptyStack();
+		 this.QueueTail = ImmutableStack.emptyStack();
+	 }
+
+	//constructor to create a new instance of queue having a QueueHead and QueueTail
+	public ImmutableQueue(ImmutableStack<T> headStack, ImmutableStack<T> tailStack){
+		 this.QueueHead = headStack;
+		 this.QueueTail = tailStack;
+	 }
+
+	// this function reverse the QueueTail and put it in QueueHead. QueueHead will be used for deQueue then
+	private void transferToQueueHead(){
+		 this.QueueHead=this.QueueTail.reverseStack();
+		 this.QueueTail=ImmutableStack.emptyStack();
+		 
+	 }
+	
+	// this is to insert to the queue. we can simply insert to Queue by inserting to queueTail
+	 public  ImmutableQueue<T> enQueue(T t){
+		 
+		 return new ImmutableQueue(this.QueueHead, this.QueueTail.push(t));
+	 }
+	 
+	 //This is to deQueue. deQueue is a bit more tricky than enQueue because we have to first check to see
+	 //if QueueHead is empty or not. if not we can deQueue from Queue head, if not we have to reverse Queue Tail
+	 // and then dequeue the first element there. all is done by creating new instances of immutableQueue
+	 
+	 public ImmutableQueue<T> deQueue(){
+		 if (this.isEmpty())
+			 throw new NoSuchElementException("Queue is Empty");
+		 if (!this.QueueHead.isStackEmpty()){
+			 return new ImmutableQueue(this.QueueHead.stackTail,this.QueueTail);
+		 }else{
+			 return new ImmutableQueue(this.QueueTail.reverseStack().stackTail, ImmutableStack.emptyStack());
+		 }
+	 }
+
+	 // similar to deQueue we just do not need to actually dequeu the first element. instead we just return the 
+	 //first element
+	 public T head(){
+		 
+		 if (this.isEmpty()){
+			throw new NoSuchElementException("Queue is Empty");
+		 }
+		 if (this.QueueHead.isStackEmpty())
+			 transferToQueueHead();
+		 return this.QueueHead.stackHead; 		
+		 
+		 
+	 }
+	 
+	 //check if queue is empty or not
+	 public boolean isEmpty(){
+		 
+		 if (this.size()==0 )
+			 return true;
+		 else
+		     return false;
+		 
+	 }
+	 
+	 //return queue size
+	 public int size(){
+		 
+		 return this.QueueHead.stackSize + this.QueueTail.stackSize;
+	 }
+	
+}
